@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短视频剪辑教练 - 智能脚本生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #0075B3;
+            --primary-light: #E8F4FC;
+            --dark: #1A1A1A;
+            --white: #FFFFFF;
+            --gray-100: #F5F5F5;
+            --gray-200: #E8E8E8;
+            --gray-400: #9CA3AF;
+            --gray-600: #4B5563;
+            --success: #10B981;
+            --warning: #F59E0B;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--white);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Card Styles */
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: var(--primary);
+            color: var(--white);
+            padding: 16px 24px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-header .icon {
+            font-size: 1.3rem;
+        }
+        
+        .card-body {
+            padding: 24px;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--gray-200);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: var(--gray-100);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+        
+        .upload-text {
+            font-size: 1rem;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+        
+        .upload-hint {
+            font-size: 0.85rem;
+            color: var(--gray-400);
+        }
+        
+        #videoInput {
+            display: none;
+        }
+        
+        /* Video Preview */
+        .video-preview {
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .video-preview video {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+        }
+        
+        .video-info {
+            background: var(--gray-100);
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        .form-label .required {
+            color: #EF4444;
+            margin-left: 4px;
+        }
+        
+        .form-select, .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            background: var(--white);
+            font-family: inherit;
+        }
+        
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,117,179,0.1);
+        }
+        
+        .form-select:disabled {
+            background: var(--gray-100);
+            cursor: not-allowed;
+        }
+        
+        /* Multi-select Tags */
+        .multi-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid var(--gray-200);
+            background: var(--white);
+            color: var(--gray-600);
+        }
+        
+        .tag:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .tag.selected {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+        }
+        
+        .tag.selected:hover {
+            background: #006094;
+            border-color: #006094;
+        }
+        
+        /* Tone Settings */
+        .tone-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .tone-card {
+            padding: 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        
+        .tone-card:hover {
+            border-color: var(--primary);
+        }
+        
+        .tone-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        
+        .tone-card .emoji {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        
+        .tone-card .name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .tone-card .desc {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+        
+        /* Generate Button */
+        .generate-btn {
+            width: 100%;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, #006094 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,117,179,0.3);
+        }
+        
+        .generate-btn:disabled {
+            background: var(--gray-400);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .generate-btn.loading {
+            pointer-events: none;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--white);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Result Area */
+        .result-section {
+            display: none;
+        }
+        
+        .result-section.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-card {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .result-header {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: var(--white);
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-header h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .copy-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: var(--white);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .result-body {
+            padding: 24px;
+        }
+        
+        .script-section {
+            margin-bottom: 24px;
+        }
+        
+        .script-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-content {
+            background: var(--gray-100);
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--dark);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .hook-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .cta-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .cta-option {
+            background: var(--primary-light);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .cta-option:hover {
+            border-color: var(--primary);
+            background: var(--white);
+        }
+        
+        /* Analysis Panel */
+        .analysis-panel {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .analysis-title {
+            font-weight: 600;
+            color: #92400E;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .analysis-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        
+        .analysis-item {
+            background: var(--white);
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .analysis-item .icon {
+            font-size: 1.3rem;
+        }
+        
+        .analysis-item .label {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+        }
+        
+        .analysis-item .value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        /* Subtitle Preview */
+        .subtitle-preview {
+            background: var(--dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        
+        .subtitle-preview-title {
+            color: var(--gray-400);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+        
+        .subtitle-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .subtitle-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .subtitle-time {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+            font-family: monospace;
+            min-width: 50px;
+        }
+        
+        .subtitle-text {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: var(--white);
+            font-size: 0.95rem;
+            flex: 1;
+        }
+        
+        /* Tips Section */
+        .tips-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .tips-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .tip-card {
+            padding: 16px;
+            background: var(--gray-100);
+            border-radius: 10px;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .tip-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+        
+        .tip-card p {
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--dark);
+            color: var(--white);
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tone-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .analysis-items {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎬 短视频剪辑教练</h1>
+            <p>上传视频，智能分析内容，自动生成匹配调性的口播脚本与字幕建议</p>
+        </header>
+        
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left: Video Upload & Analysis -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">📹</span>
+                    视频上传与分析
+                </div>
+                <div class="card-body">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">🎥</div>
+                        <div class="upload-text">点击或拖拽上传视频</div>
+                        <div class="upload-hint">支持 MP4、MOV、AVI 格式，建议时长 15-60 秒</div>
+                    </div>
+                    <input type="file" id="videoInput" accept="video/*">
+                    
+                    <div class="video-preview" id="videoPreview">
+                        <video id="previewVideo" controls></video>
+                        <div class="video-info" id="videoInfo"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right: Script Configuration -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">⚙️</span>
+                    脚本配置
+                </div>
+                <div class="card-body">
+                    <!-- Product -->
+                    <div class="form-group">
+                        <label class="form-label">产品名称 <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="productInput" placeholder="例如：ITO 空气感双肩包二代（T2）" value="ITO 空气感双肩包二代（T2）">
+                    </div>
+                    
+                    <!-- Template -->
+                    <div class="form-group">
+                        <label class="form-label">脚本模板 <span class="required">*</span></label>
+                        <select class="form-select" id="templateSelect">
+                            <option value="">请选择模板...</option>
+                            <option value="template1">模板1：场景 → 卖点 → CTA</option>
+                            <option value="template2">模板2：痛点 → 对比 → 解决方案</option>
+                            <option value="template3">模板3：反转式</option>
+                            <option value="template4">模板4：教程式</option>
+                            <option value="template5" selected>模板5：尺寸选择（xxx用14升，xxxx用16升）→ 卖点 → 结尾+适配人群</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Target Audience -->
+                    <div class="form-group">
+                        <label class="form-label">目标人群 <span class="required">*</span></label>
+                        <select class="form-select" id="audienceSelect">
+                            <option value="">请选择人群...</option>
+                            <option value="省心规划型" selected>省心规划型</option>
+                            <option value="精致体验型">精致体验型</option>
+                            <option value="性价比导向型">性价比导向型</option>
+                            <option value="潮流追随型">潮流追随型</option>
+                            <option value="实用主义型">实用主义型</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Scenes -->
+                    <div class="form-group">
+                        <label class="form-label">使用场景 <span class="required">*</span>（可多选）</label>
+                        <div class="multi-select" id="sceneTags">
+                            <span class="tag selected" data-value="通勤">通勤</span>
+                            <span class="tag" data-value="地铁">地铁</span>
+                            <span class="tag" data-value="办公室">办公室</span>
+                            <span class="tag" data-value="出差">出差</span>
+                            <span class="tag" data-value="旅行">旅行</span>
+                            <span class="tag" data-value="周末出游">周末出游</span>
+                            <span class="tag" data-value="商务会议">商务会议</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Pain Points -->
+                    <div class="form-group">
+                        <label class="form-label">核心痛点 <span class="required">*</span>（可多选，最多2个）</label>
+                        <div class="multi-select" id="painTags">
+                            <span class="tag selected" data-value="东西多不好装">东西多不好装</span>
+                            <span class="tag selected" data-value="背久了肩膀累">背久了肩膀累</span>
+                            <span class="tag" data-value="包包太重">包包太重</span>
+                            <span class="tag" data-value="找不到东西">找不到东西</span>
+                            <span class="tag" data-value="款式太老气">款式太老气</span>
+                            <span class="tag" data-value="不防水">不防水</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Selling Points -->
+                    <div class="form-group">
+                        <label class="form-label">卖点模块 <span class="required">*</span>（可多选，最多3个）</label>
+                        <div class="multi-select" id="sellingTags">
+                            <span class="tag selected" data-value="轻量">轻量</span>
+                            <span class="tag selected" data-value="3D肩带">3D肩带</span>
+                            <span class="tag" data-value="大容量">大容量</span>
+                            <span class="tag" data-value="防水面料">防水面料</span>
+                            <span class="tag" data-value="多功能隔层">多功能隔层</span>
+                            <span class="tag" data-value="时尚外观">时尚外观</span>
+                            <span class="tag" data-value="透气背板">透气背板</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Emotions -->
+                    <div class="form-group">
+                        <label class="form-label">情绪关键词 <span class="required">*</span>（可多选）</label>
+                        <div class="multi-select" id="emotionTags">
+                            <span class="tag selected" data-value="省心">省心</span>
+                            <span class="tag selected" data-value="从容">从容</span>
+                            <span class="tag" data-value="自信">自信</span>
+                            <span class="tag" data-value="轻松">轻松</span>
+                            <span class="tag" data-value="高效">高效</span>
+                            <span class="tag" data-value="品质感">品质感</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity -->
+                    <div class="form-group">
+                        <label class="form-label">活动/价格机制</label>
+                        <input type="text" class="form-input" id="activityInput" placeholder="例如：下单就送180天无忧换新+包包清洁剂" value="下单就送180天无忧换新+包包清洁剂">
+                    </div>
+                    
+                    <!-- Tone -->
+                    <div class="form-group">
+                        <label class="form-label">视频调性 <span class="required">*</span></label>
+                        <div class="tone-grid" id="toneGrid">
+                            <div class="tone-card selected" data-tone="轻熟质感">
+                                <div class="emoji">✨</div>
+                                <div class="name">轻熟质感</div>
+                                <div class="desc">真实体验、生活方式种草</div>
+                            </div>
+                            <div class="tone-card" data-tone="活力青春">
+                                <div class="emoji">🔥</div>
+                                <div class="name">活力青春</div>
+                                <div class="desc">节奏快、情绪饱满</div>
+                            </div>
+                            <div class="tone-card" data-tone="专业靠谱">
+                                <div class="emoji">📊</div>
+                                <div class="name">专业靠谱</div>
+                                <div class="desc">数据说话、理性分析</div>
+                            </div>
+                            <div class="tone-card" data-tone="温暖治愈">
+                                <div class="emoji">💝</div>
+                                <div class="name">温暖治愈</div>
+                                <div class="desc">情感共鸣、故事感强</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Word Count -->
+                    <div class="form-group">
+                        <label class="form-label">字数要求</label>
+                        <select class="form-select" id="wordCountSelect">
+                            <option value="80字左右">80字左右（快节奏）</option>
+                            <option value="100字左右" selected>100字左右（标准）</option>
+                            <option value="150字左右">150字左右（详细）</option>
+                            <option value="200字左右">200字左右（深度）</option>
+                        </select>
+                    </div>
+                    
+                    <button class="generate-btn" id="generateBtn">
+                        <span>🚀</span>
+                        生成智能脚本
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Result Section -->
+        <div class="result-section" id="resultSection">
+            <div class="result-card">
+                <div class="result-header">
+                    <h2>
+                        <span>✅</span>
+                        生成完成！以下是为您定制的口播脚本
+                    </h2>
+                    <button class="copy-btn" id="copyBtn">📋 复制全部</button>
+                </div>
+                <div class="result-body">
+                    <!-- Analysis Panel -->
+                    <div class="analysis-panel">
+                        <div class="analysis-title">
+                            <span>📊</span>
+                            视频分析报告
+                        </div>
+                        <div class="analysis-items" id="analysisItems">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                    
+                    <!-- Video Style Recommendations -->
+                    <div class="style-recommendations" id="styleRecommendations" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, #E8F4FC 0%, #D6EBF7 100%); border-radius: 12px;">
+                        <div style="font-weight: 600; color: #0075B3; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span>🎨</span>
+                            调性匹配建议
+                        </div>
+                        <div id="styleContent" style="font-size: 0.95rem; line-height: 1.7; color: #1A1A1A;">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                    
+                    <!-- Script Content -->
+                    <div class="script-section">
+                        <div class="section-title">
+                            <span>📝</span>
+                            脚本模板
+                        </div>
+                        <div class="section-content" id="templateResult">
+                            模板5：尺寸选择 → 卖点 → 结尾+适配人群
+                        </div>
+                    </div>
+                    
+                    <div class="script-section">
+                        <div class="section-title">
+                            <span>🎣</span>
+                            开头钩子（前3秒）
+                        </div>
+                        <div class="section-content hook-text" id="hookResult">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                    
+                    <div class="script-section">
+                        <div class="section-title">
+                            <span>🎤</span>
+                            口播脚本
+                        </div>
+                        <div class="section-content" id="scriptResult">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                    
+                    <div class="script-section">
+                        <div class="section-title">
+                            <span>🎯</span>
+                            结尾CTA备选
+                        </div>
+                        <div class="cta-options" id="ctaResult">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                    
+                    <!-- Subtitle Preview -->
+                    <div class="subtitle-preview">
+                        <div class="subtitle-preview-title">💬 字幕时间轴建议</div>
+                        <div class="subtitle-timeline" id="subtitleTimeline">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tips Section -->
+        <div class="tips-section">
+            <div class="tips-title">
+                <span>💡</span>
+                剪辑技巧小贴士
+            </div>
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <h4>🎬 前三秒法则</h4>
+                    <p>视频前3秒决定用户是否停留。用强视觉冲击或悬念钩子抓住注意力，避免平淡开场。</p>
+                </div>
+                <div class="tip-card">
+                    <h4>✂️ 节奏把控</h4>
+                    <p>每3-5秒切换画面或添加转场，保持视觉新鲜感。口播与画面要同步，避免音画脱节。</p>
+                </div>
+                <div class="tip-card">
+                    <h4>📝 字幕设计</h4>
+                    <p>关键词用高亮色标注，字号要足够大（手机观看）。每行不超过12个字，停留2-3秒。</p>
+                </div>
+                <div class="tip-card">
+                    <h4>🎵 背景音乐</h4>
+                    <p>选择与调性匹配的音乐。轻熟质感选轻音乐/爵士，活力青春选电子/流行，音量低于人声。</p>
+                </div>
+                <div class="tip-card">
+                    <h4>🎯 CTA设计</h4>
+                    <p>行动号召不要太硬，用"顺便提醒"、"悄悄说"等软化表达，配合手势或箭头引导。</p>
+                </div>
+                <div class="tip-card">
+                    <h4>📱 竖屏适配</h4>
+                    <p>核心内容放在画面中间安全区（上下各留10%），避免被抖音/快手的UI遮挡。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // Data & State
+        const state = {
+            videoFile: null,
+            videoDuration: 0,
+            selectedScenes: ['通勤'],
+            selectedPains: ['东西多不好装', '背久了肩膀累'],
+            selectedSelling: ['轻量', '3D肩带'],
+            selectedEmotions: ['省心', '从容'],
+            selectedTone: '轻熟质感'
+        };
+        
+        // Template Descriptions
+        const templateDescriptions = {
+            template1: '场景 → 卖点 → CTA',
+            template2: '痛点 → 对比 → 解决方案',
+            template3: '反转式',
+            template4: '教程式',
+            template5: '尺寸选择 → 卖点 → 结尾+适配人群'
+        };
+        
+        // Script Templates Database - Enhanced with more variations
+        const scriptDatabase = {
+            template1: {
+                hooks: [
+                    '每天通勤的你，是不是也在找这样一个包？',
+                    '这个包，我背了三个月，必须安利给你',
+                    '通勤党的福音，终于找到不压肩膀的双肩包了',
+                    '早上8点的地铁里，我的肩膀终于不疼了',
+                    '打工人必备！这个包让我每天多睡10分钟'
+                ],
+                scripts: [
+                    '早上赶地铁，包里塞着电脑、水杯、雨伞，肩膀却一点都不累。ITO这款空气感双肩包，轻到像没背东西一样。3D立体肩带设计，完美贴合肩膀曲线，再也不怕勒痕了。容量也很感人，14寸电脑+日常杂物完全没问题。现在下单还送180天无忧换新，通勤党真的可以冲！',
+                    '作为一个每天挤地铁的打工人，找到这个包真的太省心了。轻量设计，背一整天都不觉得重。3D肩带分散压力，肩膀终于解放了。通勤、出差都能用，颜值还在线。趁现在有活动，赶紧入手吧！',
+                    '通勤路上最烦的就是包太重。这款空气感双肩包真的救了我，轻得不可思议。3D肩带设计，背着走再多路也不累。分区收纳，找东西超方便。通勤党闭眼入！'
+                ],
+                ctas: [
+                    '点下方链接，省心通勤从这里开始',
+                    '现在下单还有赠品，别错过',
+                    '评论区告诉我你的通勤痛点',
+                    '同款链接在左下角，自取',
+                    '通勤党集合，这个包真的香'
+                ]
+            },
+            template2: {
+                hooks: [
+                    '普通背包vs空气感背包，差距竟然这么大',
+                    '为什么你的包总是背得肩膀疼？',
+                    '换了三个包之后，我终于明白了...',
+                    '同样是双肩包，为什么这个包背一天都不累？',
+                    '以前觉得包都差不多，直到遇见它...'
+                ],
+                scripts: [
+                    '以前用的包，装点东西就沉得要命，背一天肩膀又酸又痛。直到遇见ITO空气感双肩包，才知道什么叫真正的轻。同样的东西装进去，重量感完全不一样。3D肩带设计，压力分散均匀，背一整天都轻松。东西多不好装？不存在的，分区设计让你秒找东西。',
+                    '痛点我懂：包太重、肩膀疼、东西乱。这款包全解决了。轻量材质+3D肩带，背感直接升级。对比普通背包，简直是降维打击。现在入手还有无忧换新服务，试错成本为零。',
+                    '普通背包背一天，肩膀像被石头压着。换了这款空气感双肩包，简直是两个世界。轻量设计+3D肩带，同样的东西，背负感天差地别。不信你试试！'
+                ],
+                ctas: [
+                    '告别肩膀酸痛，从这个包开始',
+                    '点击下方，体验不一样的背负感',
+                    '限时福利，错过再等一年',
+                    '对比之后才知道，这个包真的值',
+                    '不信？点进去看真实评价'
+                ]
+            },
+            template3: {
+                hooks: [
+                    '这个包，我本来想退货的...',
+                    '同事说我这个包看着一般，结果...',
+                    '买的时候犹豫，用了之后真香',
+                    '一开始觉得智商税，现在每天离不开',
+                    '我妈问我为什么又买包，我给她看了这个...'
+                ],
+                scripts: [
+                    '说实话，买ITO这个包的时候，我还担心会不会又是智商税。结果用了两周，直接真香了。轻得不像话，装再多东西也不压肩。3D肩带真的有用，不是噱头。现在我每天通勤都背它，同事都被我种草了。',
+                    '一开始觉得贵，用了才知道值。普通包背一天肩膀要断了，这个包完全不会。轻量+3D肩带，通勤体验直接拉满。现在还有赠品活动，入手不亏。',
+                    '本来想买回来试试，不行就退。结果一背上就摘不下来了。轻量设计太舒服了，3D肩带完全不会勒肩膀。现在用了两个月，只想说：真香！'
+                ],
+                ctas: [
+                    '真香警告，不信你试试',
+                    '点击了解，也许你也会真香',
+                    '评论区说说你的真香时刻',
+                    '试试又不亏，不满意还能退',
+                    '真香现场，点进来看更多'
+                ]
+            },
+            template4: {
+                hooks: [
+                    '30秒教你选对通勤包',
+                    '通勤包怎么选？看这三点就够了',
+                    '买包前必看！省心选购指南',
+                    '通勤包选购攻略，看完不踩坑',
+                    '内行人才知道的选包技巧'
+                ],
+                scripts: [
+                    '选通勤包，记住三个要点：轻、能装、不伤肩。ITO空气感双肩包，轻量材质，背感舒适。3D立体肩带，分散压力，背再久也不累。14升容量，电脑+杂物轻松装。通勤用14升，出差选16升，按需选择不浪费。',
+                    '通勤包选购攻略：第一看重量，第二看肩带，第三看容量。这款包三点全中。轻量设计+3D肩带+科学分区，通勤党必备。现在下单还有清洁套装送，省心到家。',
+                    '买通勤包别只看颜值，实用性更重要。重量要轻，肩带要舒服，容量要够用。这款空气感双肩包三项全优，还有14升和16升两种尺寸可选。通勤出差都能用，性价比超高。'
+                ],
+                ctas: [
+                    '点这里，get同款省心包',
+                    '选购指南收好，下单不犹豫',
+                    '更多选购技巧，关注我不迷路',
+                    '按这个标准选，准没错',
+                    '攻略看完了，链接在左下角'
+                ]
+            },
+            template5: {
+                hooks: [
+                    '通勤用14升，出差选16升，ITO这款包太懂我了',
+                    '终于有人把背包尺寸说明白了',
+                    '不同场景用不同尺寸，这个设计太贴心',
+                    '14升还是16升？看完你就知道怎么选了',
+                    '一个品牌两种尺寸，覆盖你所有需求'
+                ],
+                scripts: [
+                    '日常通勤选14升，装电脑、文件刚好，轻便不臃肿。出差旅行选16升，多装两件衣服，空间更从容。ITO空气感双肩包，轻量设计背感超舒服，3D肩带分散压力，背一整天都不累。不管是地铁通勤还是机场出差，都能找到适合的尺寸。',
+                    '14升通勤刚刚好，16升出差更从容。ITO空气感双肩包，轻到像没背东西。3D立体肩带，告别肩膀酸痛。两种尺寸，覆盖你所有使用场景。现在下单还送180天无忧换新+清洁套装，省心又划算。',
+                    '选包最纠结的就是尺寸。14升日常通勤够用，16升出差能多装。ITO这款空气感双肩包两种尺寸都用了轻量设计+3D肩带，背感一样舒服。按需选择，不花冤枉钱。'
+                ],
+                ctas: [
+                    '点下方链接，选对尺寸不纠结',
+                    '14升or16升？进来挑你的专属尺寸',
+                    '限时赠品，下单即享',
+                    '尺寸指南在详情页，去看看',
+                    '不知道自己适合哪个？问客服'
+                ]
+            }
+        };
+        
+        // Tone Adjustments
+        const toneAdjustments = {
+            '轻熟质感': {
+                prefix: '',
+                style: '真实体验、生活方式种草',
+                emoji: false,
+                bgColors: ['#F8F6F3', '#F5F3F0'],
+                accentColor: '#8B7355'
+            },
+            '活力青春': {
+                prefix: '姐妹们！',
+                style: '节奏快、情绪饱满',
+                emoji: true,
+                bgColors: ['#FFF5E6', '#FFE4CC'],
+                accentColor: '#FF6B35'
+            },
+            '专业靠谱': {
+                prefix: '从专业角度来说，',
+                style: '数据说话、理性分析',
+                emoji: false,
+                bgColors: ['#E8F4FC', '#D6EBF7'],
+                accentColor: '#0075B3'
+            },
+            '温暖治愈': {
+                prefix: '说实话，',
+                style: '情感共鸣、故事感强',
+                emoji: false,
+                bgColors: ['#FFF0F3', '#FFE4EA'],
+                accentColor: '#E85A7A'
+            }
+        };
+        
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const videoInput = document.getElementById('videoInput');
+        const videoPreview = document.getElementById('videoPreview');
+        const previewVideo = document.getElementById('previewVideo');
+        const videoInfo = document.getElementById('videoInfo');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultSection = document.getElementById('resultSection');
+        const toast = document.getElementById('toast');
+        
+        // Upload Handling
+        uploadArea.addEventListener('click', () => videoInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('video/')) {
+                handleVideoUpload(files[0]);
+            }
+        });
+        
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleVideoUpload(e.target.files[0]);
+            }
+        });
+        
+        function handleVideoUpload(file) {
+            state.videoFile = file;
+            const url = URL.createObjectURL(file);
+            previewVideo.src = url;
+            videoPreview.style.display = 'block';
+            
+            previewVideo.onloadedmetadata = () => {
+                state.videoDuration = previewVideo.duration;
+                const minutes = Math.floor(previewVideo.duration / 60);
+                const seconds = Math.floor(previewVideo.duration % 60);
+                videoInfo.textContent = `${file.name} | 时长: ${minutes}分${seconds}秒 | 大小: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
+            };
+        }
+        
+        // Multi-select Handling
+        function setupMultiSelect(containerId, stateKey, maxSelect = null) {
+            const container = document.getElementById(containerId);
+            const tags = container.querySelectorAll('.tag');
+            
+            tags.forEach(tag => {
+                tag.addEventListener('click', () => {
+                    const value = tag.dataset.value;
+                    
+                    if (tag.classList.contains('selected')) {
+                        tag.classList.remove('selected');
+                        state[stateKey] = state[stateKey].filter(v => v !== value);
+                    } else {
+                        if (maxSelect && state[stateKey].length >= maxSelect) {
+                            showToast(`最多选择${maxSelect}个`);
+                            return;
+                        }
+                        tag.classList.add('selected');
+                        state[stateKey].push(value);
+                    }
+                });
+            });
+        }
+        
+        setupMultiSelect('sceneTags', 'selectedScenes');
+        setupMultiSelect('painTags', 'selectedPains', 2);
+        setupMultiSelect('sellingTags', 'selectedSelling', 3);
+        setupMultiSelect('emotionTags', 'selectedEmotions');
+        
+        // Tone Selection
+        document.getElementById('toneGrid').querySelectorAll('.tone-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.getElementById('toneGrid').querySelectorAll('.tone-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                state.selectedTone = card.dataset.tone;
+            });
+        });
+        
+        // Generate Script
+        generateBtn.addEventListener('click', async () => {
+            // Validation
+            const product = document.getElementById('productInput').value.trim();
+            const template = document.getElementById('templateSelect').value;
+            const audience = document.getElementById('audienceSelect').value;
+            
+            if (!product) {
+                showToast('请填写产品名称');
+                return;
+            }
+            if (!template) {
+                showToast('请选择脚本模板');
+                return;
+            }
+            if (!audience) {
+                showToast('请选择目标人群');
+                return;
+            }
+            if (state.selectedScenes.length === 0) {
+                showToast('请至少选择一个使用场景');
+                return;
+            }
+            if (state.selectedPains.length === 0) {
+                showToast('请至少选择一个核心痛点');
+                return;
+            }
+            if (state.selectedSelling.length === 0) {
+                showToast('请至少选择一个卖点模块');
+                return;
+            }
+            
+            // Loading State
+            generateBtn.disabled = true;
+            generateBtn.classList.add('loading');
+            generateBtn.innerHTML = '<div class="spinner"></div> 正在智能分析视频并生成脚本...';
+            
+            // Simulate processing
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Generate Content
+            const content = generateContent(template, product, audience);
+            
+            // Update UI
+            document.getElementById('templateResult').textContent = templateDescriptions[template];
+            document.getElementById('hookResult').textContent = content.hook;
+            document.getElementById('scriptResult').textContent = content.script;
+            
+            // Update CTA
+            const ctaContainer = document.getElementById('ctaResult');
+            ctaContainer.innerHTML = '';
+            content.ctas.forEach(cta => {
+                const div = document.createElement('div');
+                div.className = 'cta-option';
+                div.textContent = cta;
+                div.addEventListener('click', () => {
+                    navigator.clipboard.writeText(cta);
+                    showToast('已复制CTA');
+                });
+                ctaContainer.appendChild(div);
+            });
+            
+            // Update Analysis
+            updateAnalysis(template, audience);
+            
+            // Update Subtitles
+            updateSubtitles(content.script, content.hook);
+            
+            // Show Result
+            resultSection.classList.add('show');
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Reset Button
+            generateBtn.disabled = false;
+            generateBtn.classList.remove('loading');
+            generateBtn.innerHTML = '<span>🚀</span> 生成智能脚本';
+        });
+        
+        function generateContent(template, product, audience) {
+            const db = scriptDatabase[template];
+            const tone = toneAdjustments[state.selectedTone];
+            
+            // Select random variations
+            const hook = db.hooks[Math.floor(Math.random() * db.hooks.length)];
+            let script = db.scripts[Math.floor(Math.random() * db.scripts.length)];
+            const ctas = [...db.ctas];
+            
+            // Apply tone adjustments
+            if (tone.prefix) {
+                script = tone.prefix + script.charAt(0).toLowerCase() + script.slice(1);
+            }
+            
+            // Replace placeholders with actual values
+            script = script.replace(/ITO.*?包/g, product);
+            
+            // Add selling points if not mentioned
+            const sellingMentioned = state.selectedSelling.some(s => script.includes(s));
+            if (!sellingMentioned && state.selectedSelling.length > 0) {
+                script += `特别要提的是它的${state.selectedSelling.join('、')}设计，${audience}用特别合适。`;
+            }
+            
+            // Add activity if provided
+            const activity = document.getElementById('activityInput').value.trim();
+            if (activity && !script.includes(activity)) {
+                script = script.replace(/现在下单.*/, `现在${activity}，${audience}别错过！`);
+            }
+            
+            // Apply tone-specific styling
+            applyToneStyling(tone);
+            
+            return { hook, script, ctas };
+        }
+        
+        function applyToneStyling(tone) {
+            // Update result card background based on tone
+            const resultCard = document.querySelector('.result-card');
+            if (resultCard && tone.bgColors) {
+                resultCard.style.background = `linear-gradient(135deg, ${tone.bgColors[0]} 0%, ${tone.bgColors[1]} 100%)`;
+            }
+            
+            // Update accent colors
+            const sectionContents = document.querySelectorAll('.section-content');
+            sectionContents.forEach(el => {
+                if (tone.accentColor) {
+                    el.style.borderLeftColor = tone.accentColor;
+                }
+            });
+            
+            // Update hook text color
+            const hookResult = document.getElementById('hookResult');
+            if (hookResult && tone.accentColor) {
+                hookResult.style.color = tone.accentColor;
+            }
+            
+            // Update section titles
+            const sectionTitles = document.querySelectorAll('.section-title');
+            sectionTitles.forEach(el => {
+                if (tone.accentColor) {
+                    el.style.color = tone.accentColor;
+                }
+            });
+        }
+        
+        function updateAnalysis(template, audience) {
+            const analysisItems = document.getElementById('analysisItems');
+            const scenes = state.selectedScenes.join('、');
+            const pains = state.selectedPains.join('、');
+            const selling = state.selectedSelling.join('、');
+            
+            analysisItems.innerHTML = `
+                <div class="analysis-item">
+                    <span class="icon">🎬</span>
+                    <div>
+                        <div class="label">视频时长</div>
+                        <div class="value">${state.videoDuration > 0 ? Math.floor(state.videoDuration) + '秒' : '建议15-60秒'}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">📋</span>
+                    <div>
+                        <div class="label">推荐模板</div>
+                        <div class="value">${templateDescriptions[template]}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">👥</span>
+                    <div>
+                        <div class="label">目标人群</div>
+                        <div class="value">${audience}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">📍</span>
+                    <div>
+                        <div class="label">使用场景</div>
+                        <div class="value">${scenes}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">😣</span>
+                    <div>
+                        <div class="label">核心痛点</div>
+                        <div class="value">${pains}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">✨</span>
+                    <div>
+                        <div class="label">卖点匹配</div>
+                        <div class="value">${selling}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">🎨</span>
+                    <div>
+                        <div class="label">视频调性</div>
+                        <div class="value">${state.selectedTone}</div>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <span class="icon">😊</span>
+                    <div>
+                        <div class="label">情绪关键词</div>
+                        <div class="value">${state.selectedEmotions.join('、')}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Update style recommendations
+            updateStyleRecommendations(template, audience);
+        }
+        
+        function updateStyleRecommendations(template, audience) {
+            const styleContent = document.getElementById('styleContent');
+            const tone = state.selectedTone;
+            
+            const recommendations = {
+                '轻熟质感': {
+                    colorScheme: '莫兰迪色系、低饱和度',
+                    music: '轻音乐、爵士、Lo-fi',
+                    pace: '中等偏慢，留足呼吸感',
+                    font: '思源黑体 Medium，字号适中',
+                    tips: '多用自然光，画面干净简洁。字幕出现要优雅，不要太跳跃。'
+                },
+                '活力青春': {
+                    colorScheme: '明亮鲜艳、高对比度',
+                    music: '电子、流行、节奏感强',
+                    pace: '快节奏，3秒一切换',
+                    font: '粗体、圆体，字号大',
+                    tips: '多用动态转场，配合音乐卡点。字幕可以加弹跳动画。'
+                },
+                '专业靠谱': {
+                    colorScheme: '蓝白配色、商务风格',
+                    music: '轻音乐、钢琴曲',
+                    pace: '稳定节奏，重点突出',
+                    font: '思源黑体 Regular，清晰易读',
+                    tips: '可以用数据可视化、图表展示。画面要稳，避免过度晃动。'
+                },
+                '温暖治愈': {
+                    colorScheme: '暖色调、柔和光线',
+                    music: '民谣、轻音乐、自然音效',
+                    pace: '舒缓，有故事感',
+                    font: '手写体或圆体，亲切感',
+                    tips: '多用近景、特写，营造亲密感。光线要柔和，避免硬光。'
+                }
+            };
+            
+            const rec = recommendations[tone];
+            styleContent.innerHTML = `
+                <div style="margin-bottom: 10px;"><strong>🎨 配色方案：</strong>${rec.colorScheme}</div>
+                <div style="margin-bottom: 10px;"><strong>🎵 背景音乐：</strong>${rec.music}</div>
+                <div style="margin-bottom: 10px;"><strong>⏱️ 剪辑节奏：</strong>${rec.pace}</div>
+                <div style="margin-bottom: 10px;"><strong>📝 字幕字体：</strong>${rec.font}</div>
+                <div style="padding: 12px; background: rgba(255,255,255,0.5); border-radius: 8px; margin-top: 12px;">
+                    <strong>💡 专属建议：</strong>${rec.tips}
+                </div>
+            `;
+        }
+        
+        function updateSubtitles(script, hook) {
+            const timeline = document.getElementById('subtitleTimeline');
+            const sentences = script.match(/[^。！？]+[。！？]/g) || [script];
+            
+            let html = '';
+            let currentTime = 0;
+            
+            // Add hook as first subtitle (0-3 seconds)
+            html += `
+                <div class="subtitle-item" style="background: rgba(0,117,179,0.2); border-radius: 6px;">
+                    <span class="subtitle-time">00:00</span>
+                    <span class="subtitle-text" style="color: #FFD700; font-weight: 600;">🎣 ${hook}</span>
+                </div>
+            `;
+            currentTime += 3;
+            
+            sentences.forEach((sentence, index) => {
+                const duration = Math.max(2, Math.ceil(sentence.length / 5));
+                const startTime = formatTime(currentTime);
+                
+                // Highlight key selling points
+                let highlightedSentence = sentence.trim();
+                state.selectedSelling.forEach(point => {
+                    if (highlightedSentence.includes(point)) {
+                        highlightedSentence = highlightedSentence.replace(
+                            point, 
+                            `<span style="color: #FFD700; font-weight: 600;">${point}</span>`
+                        );
+                    }
+                });
+                
+                html += `
+                    <div class="subtitle-item">
+                        <span class="subtitle-time">${startTime}</span>
+                        <span class="subtitle-text">${highlightedSentence}</span>
+                    </div>
+                `;
+                
+                currentTime += duration;
+            });
+            
+            // Add end marker
+            html += `
+                <div class="subtitle-item" style="opacity: 0.6;">
+                    <span class="subtitle-time">${formatTime(currentTime)}</span>
+                    <span class="subtitle-text">🎯 [CTA行动号召 + 引导点击]</span>
+                </div>
+            `;
+            
+            timeline.innerHTML = html;
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Copy Button
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const template = document.getElementById('templateResult').textContent;
+            const hook = document.getElementById('hookResult').textContent;
+            const script = document.getElementById('scriptResult').textContent;
+            
+            const fullText = `【脚本模板】\n${template}\n\n【开头钩子】\n${hook}\n\n【口播脚本】\n${script}`;
+            
+            navigator.clipboard.writeText(fullText).then(() => {
+                showToast('脚本已复制到剪贴板');
+            });
+        });
+        
+        // Toast
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
